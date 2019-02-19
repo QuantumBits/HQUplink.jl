@@ -5,8 +5,6 @@ export AttackDie, DefendDie, Weapon, AttackPool, DefenseDice
 export RA, BA, WA, RD, WD
 export dice, result, roll, EV
 
-
-
 abstract type DieFace end
 
 abstract type BLANK <: DieFace end
@@ -51,6 +49,12 @@ struct AttackPool
     sharpshooter::Int       # Total Sharpshooter <X> value
 end
 
+spray(pool::AttackPool) = any([w.spray for w in pool.weapons])
+blast(pool::AttackPool) = any([w.blast for w in pool.weapons])
+highVelocity(pool::AttackPool) = any([w.highVelocity for w in pool.weapons])
+pierce(pool::AttackPool) = sum([w.pierce for w in pool.weapons])
+impact(pool::AttackPool) = sum([w.impact for w in pool.weapons])
+
 struct DefenseDice
     dice::DefendDie         # Base defense die type
     cover::Int              # Type of cover (none=0, light=1, heavy=2)
@@ -62,6 +66,11 @@ struct DefenseDice
     deflect::Bool           # If dodge > 0, surge = 1
 end
 
+"""
+    dice(pool::AttackPool)
+
+Build a dictionary with AttackDice as keys and total number of that die type in the AttackPool as values.
+"""
 function dice(pool::AttackPool)
     p = Dict{AttackDie, Int}()
     for w in pool.weapons, d in w.dice
@@ -74,9 +83,30 @@ function dice(pool::AttackPool)
     return p
 end
 
+"""
+    result(AttackDie, T::{HIT,CRIT,BLANK})
+
+Return the (array-based) result of the specified die side for the AttackDie type.
+- HIT   : [1,0,0]
+- CRIT  : [0,1,0]
+- BLANK : [0,0,1]
+"""
 result(::Type{AttackDie}, T::Union{Type{HIT},Type{CRIT},Type{BLANK}}) = T == HIT ? [1,0,0] : ( T == CRIT ? [0,1,0] : [0,0,1] )
+
+"""
+    result(DefendDie, T::{BLOCK, BLANK})
+
+Return the (array-based) result of the specified die side for the DefendDie.
+- BLOCK : [1,0]
+- BLANK : [0,1]
+"""
 result(::Type{DefendDie}, T::Union{Type{BLOCK}, Type{BLANK}}) = T == BLOCK ? [1,0] : [0,1]
 
+"""
+    roll(a::AttackDie, S::{HIT, CRIT, BLANK}, n::Int = 1)
+
+Result of rolling n AttackDie with SURGE results returning DieFace S.
+"""
 function roll(a::AttackDie, S::Union{Type{HIT},Type{CRIT},Type{BLANK}}, n::Int=1) 
     x = [ zeros(3) for i in 1:n ]
     r = result.(AttackDie,[HIT,CRIT,S,BLANK])
@@ -84,6 +114,12 @@ function roll(a::AttackDie, S::Union{Type{HIT},Type{CRIT},Type{BLANK}}, n::Int=1
     sample!(r, w, x)
     return [ sum(xi[j] for xi in x) for j in 1:3 ]
 end
+
+"""
+    roll(a::DefendDie, S::{BLOCK, BLANK}, n::Int = 1)
+
+Result of rolling n DefendDie with SURGE results returning DieFace S.
+"""
 function roll(d::DefendDie, S::Union{Type{BLOCK}, Type{BLANK}}, n::Int=1) 
     x = [ zeros(2) for i in 1:n ]
     r = result.(DefendDie,[BLOCK,S,BLANK])
@@ -92,12 +128,11 @@ function roll(d::DefendDie, S::Union{Type{BLOCK}, Type{BLANK}}, n::Int=1)
     return [ sum(xi[j] for xi in x) for j in 1:2 ]
 end
 
-spray(pool::AttackPool) = any([w.spray for w in pool.weapons])
-blast(pool::AttackPool) = any([w.blast for w in pool.weapons])
-highVelocity(pool::AttackPool) = any([w.highVelocity for w in pool.weapons])
-pierce(pool::AttackPool) = sum([w.pierce for w in pool.weapons])
-impact(pool::AttackPool) = sum([w.impact for w in pool.weapons])
+"""
+    roll(pool::AttackPool)
 
+Result of rolling all the dice associated with an AttackPool
+"""
 function roll(pool::AttackPool)
    
     x = [0, 0, 0]
@@ -113,8 +148,11 @@ function roll(pool::AttackPool)
 
 end
 
-P(n::Int, k::Int, p::Real) = binomial(n, k) * p^k * (1-p)^(n-k)
+"""
+    EV(a::AttackDie, T::{HIT, CRIT, BLANK})
 
+Expected value (EV) of an AttackDie with SURGE results returning DieFace T.
+"""
 function EV(a::AttackDie, T::Union{Type{HIT}, Type{CRIT}, Type{BLANK}})
     
     sides = a.hit + a.crit + a.surge + a.blank
@@ -131,6 +169,11 @@ function EV(a::AttackDie, T::Union{Type{HIT}, Type{CRIT}, Type{BLANK}})
     return [p_hit, p_crit, p_blank]
 end
 
+"""
+    EV(a::DefendDie, T::{BLOCK, BLANK})
+
+Expected value (EV) of a DefendDie with SURGE results returning DieFace T.
+"""
 function EV(d::DefendDie, T::Union{Type{BLOCK}, Type{BLANK}})
     
     sides = d.block + d.surge + d.blank
@@ -144,6 +187,12 @@ function EV(d::DefendDie, T::Union{Type{BLOCK}, Type{BLANK}})
     return [p_block, p_blank]
 end
 
+
+"""
+    EV(a::DefendDie, T::{BLOCK, BLANK})
+
+Expected value (EV) of an AttackPool (STILL UNDER CONSTRUCTION)
+"""
 function EV(ap::AttackPool)
     
     hits = 0//1
@@ -160,3 +209,5 @@ function EV(ap::AttackPool)
     return [hits , crits, blocks]
 end
 
+
+P(n::Int, k::Int, p::Real) = binomial(n, k) * p^k * (1-p)^(n-k)
