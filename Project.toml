@@ -1,0 +1,7 @@
+name = "HQUplink"
+uuid = "bb5f4b60-340b-11e9-3d70-934d876722eb"
+authors = ["Jesse Campbell <JesseC@mpbell.me>"]
+version = "0.1.0"
+
+[deps]
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
