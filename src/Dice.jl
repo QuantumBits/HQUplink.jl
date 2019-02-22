@@ -199,18 +199,19 @@ Expected value (EV) of an AttackPool (STILL UNDER CONSTRUCTION)
 """
 function EV(ap::AttackPool)
     
-    hits = 0//1
-    crits = 0//1
-    blocks = 0//1
+    hcb = [0//1 , 0//1 , 0//1]
     
-    for w in ap.weapons, d in w.dice
-        hci = EV(d, ap.surge)
-        hits += hci[1]
-        crits += hci[2]
-        blocks += hci[3]
+    dap = dice(ap)
+    
+    for d in AAD
+        if haskey(dap, d)
+            nd = dap[d]
+            hcbi = nd .* EV(d, ap.surge)
+            hcb .+= hcbi
+        end
     end
     
-    return [hits , crits, blocks]
+    return hcb
 end
 
 
