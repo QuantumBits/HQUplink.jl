@@ -29,8 +29,12 @@ const RA = AttackDie(5,1,1,1)
 const BA = AttackDie(3,1,1,3)
 const WA = AttackDie(1,1,1,5)
 
+const AAD = [RA, BA, WA] # All Attack Dice
+
 const RD = DefendDie(3,1,2)
 const WD = DefendDie(1,1,4)
+
+const ADD = [RD, WD] # All Defense Dice
 
 struct Weapon
     dice::Vector{AttackDie} # List of attack dice
