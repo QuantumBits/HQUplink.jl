@@ -2,7 +2,7 @@ using StatsBase
 
 export BLANK, HIT, CRIT, BLOCK
 export AttackDie, DefendDie, Weapon, AttackPool, DefenseDice
-export RA, BA, WA, RD, WD
+export RA, BA, WA, RD, WD, AAD, ADD
 export dice, result, roll, EV
 
 abstract type DieFace end
@@ -133,22 +133,62 @@ function roll(d::DefendDie, S::Union{Type{BLOCK}, Type{BLANK}}, n::Int=1)
 end
 
 """
-    roll(pool::AttackPool)
+    roll(ap::AttackPool, dd::DefenseDice)
 
 Result of rolling all the dice associated with an AttackPool
+Implemented:
+- Aim tokens
+- Precise
 """
-function roll(pool::AttackPool)
-   
-    x = [0, 0, 0]
-    
-    d = dice(pool)
-    
-    for k in keys(d)
-        res = roll(k, pool.surge, d[k])
-        x .+= res
+function roll(ap::AttackPool)
+
+    # Gather all dice in AttackPool
+    dap = dice(ap)
+
+    # Initialize the result pool
+    rp = Dict{AttackDie, Vector{Int}}()
+    for d in AAD
+        rp[d] = zeros(Int, 3)
+    end
+
+    # Initial Roll:
+    # For each type of attack die...
+    for d in keys(dap)
+        # Add to rp
+        rp[d] = roll(d, ap.surge, dap[d])
+    end
+
+    # Reroll aims
+    for aim in 1:ap.aim
+
+        # Determine number of rerolls
+        rerolls = 2 + ap.precise
+
+        # For each type of attack die (in order of best to worst performing dice)...
+        for d in AAD
+            if haskey(rp, d)
+                # Decide whether to reroll
+                # IDEA: Resolve attack dice here
+                nblanks = rp[d][3]
+                if nblanks >= rerolls
+                    rp[d] .-= rerolls * result(AttackDie, BLANK)
+                    rp[d] .+= roll(d, ap.surge, rerolls)
+                    break
+                elseif nblanks > 0
+                    rp[d] .-= nblanks * result(AttackDie, BLANK)
+                    rp[d] .+= roll(d, ap.surge, nblanks)
+                    rerolls -= nblanks
+                end
+            end
+        end
     end
     
-    return x
+    hcb = zeros(Int, 3)
+    for d in keys(rp), k in 1:3
+        hcb[k] += rp[d][k]
+    end
+
+    return hcb
 
 end
 
@@ -202,7 +242,7 @@ function EV(ap::AttackPool)
     hcb = [0//1 , 0//1 , 0//1]
     
     dap = dice(ap)
-    
+
     for d in AAD
         if haskey(dap, d)
             nd = dap[d]
@@ -210,7 +250,7 @@ function EV(ap::AttackPool)
             hcb .+= hcbi
         end
     end
-    
+
     return hcb
 end
 
