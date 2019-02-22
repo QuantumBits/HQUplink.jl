@@ -4,6 +4,7 @@ export BLANK, HIT, CRIT, BLOCK
 export AttackDie, DefendDie, Weapon, AttackPool, DefenseDice
 export RA, BA, WA, RD, WD, AAD, ADD
 export dice, result, roll, EV
+export spray, blast, highVelocity, pierce, impact
 
 abstract type DieFace end
 
