@@ -71,9 +71,9 @@ struct Weapon
 end
 
 struct AttackPool
-    weapons::Vector{Weapon} # List of weapons in attack pool
+    weapons::Vector{Weapon} # List of weapons in attack pool # ? Weapons chosen outside of AttackPool logic
     surge::Union{Type{HIT}, Type{CRIT}, Type{BLANK}} # Type of Surge
-    aim::Int                # Number of aim tokens spent
+    aim::Int                # Number of aim tokens spent # ? Decision to use aim tokens
     precise::Int            # Total Precise <X> value
     sharpshooter::Int       # Total Sharpshooter <X> value
 end
@@ -87,13 +87,16 @@ range(pool::AttackPool) = [ minimum([w.range[1] for w in pool.weapons]) , maximu
 
 struct DefenseDice
     dice::DefendDie         # Base defense die type
-    cover::Int              # Type of cover (none=0, light=1, heavy=2)
+    coverMod::Int           # Innate cover modifier
     surge::Union{Type{BLOCK},Type{BLANK}} # Type of surge (none=0, block=1)
-    dodge::Int              # Number of dodge tokens spent
+    dodge::Int              # Number of dodge tokens available to spend # ? Decision to use dodge tokens
     armor::Bool             # Cancel all hits (but not crits)
     impervious::Bool        # Roll <X> additional defense dice if attack pool has Pierce <X>
     immuneToPierce::Bool    # Attack pool Pierce <X> value reduced to 0
-    deflect::Bool           # If dodge > 0, surge = 1
+    deflect::Bool           # If dodge > 0, surge = BLOCK # ? Decision to use dodge token
+    lowprofile::Bool        # If light cover, improve to heavy cover
+    uncannyLuck::Int        # Reroll up to <X> defense dice
+    minis::Int              # Number of minis in defending unit
 end
 
 """
