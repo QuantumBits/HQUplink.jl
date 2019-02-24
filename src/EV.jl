@@ -15,18 +15,12 @@ Expected value (EV) of an AttackDie with SURGE results returning DieFace T.
 """
 function EV(a::AttackDie, T::Union{Type{HIT}, Type{CRIT}, Type{BLANK}})
 
-    sides = a.hit + a.crit + a.surge + a.blank
 
     n_hit = a.hit + (T == HIT ? a.surge : 0)
-    p_hit = n_hit // sides
-
     n_crit = a.crit + (T == CRIT ? a.surge : 0)
-    p_crit = n_crit // sides
+    n_blank = a.blank
 
-    n_blank = sides - n_hit - n_crit
-    p_blank = n_blank // sides
-
-    return [p_hit, p_crit, p_blank]
+    return [n_hit, n_crit, n_blank] .// (a.hit + a.crit + a.surge + a.blank)
 
 end
 
@@ -37,15 +31,12 @@ Expected value (EV) of a DefendDie with SURGE results returning DieFace T.
 """
 function EV(d::DefendDie, T::Union{Type{BLOCK}, Type{BLANK}})
 
-    sides = d.block + d.surge + d.blank
 
     n_block = d.block + (T == BLOCK ? d.surge : 0)
-    p_block = n_block // sides
 
-    n_blank = sides - n_block
-    p_blank = n_blank // sides
+    n_blank = d.blank
 
-    return [p_block, p_blank]
+    return [p_block, p_blank] .// (d.block + d.surge + d.blank)
 
 end
 
@@ -57,18 +48,16 @@ Expected value (EV) of an AttackPool (STILL UNDER CONSTRUCTION)
 """
 function EV(ap::AttackPool)
 
-    hcb = [0//1 , 0//1 , 0//1]
+    dp = dice(ap)
 
-    dap = dice(ap)
+    rp = Dict{AttackDie, Vector{Rational{Int}}}()
 
-    for d in AAD
-        if haskey(dap, d)
-            nd = dap[d]
-            hcbi = nd .* EV(d, ap.surge)
-            hcb .+= hcbi
-        end
+    for d in keys(dp)
+        rp[d] = EV(d, ap.surge) .* dp[d]
     end
 
-    return hcb
+    
+
+    return rp
 
 end
