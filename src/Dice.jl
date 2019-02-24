@@ -1,10 +1,13 @@
 using StatsBase
 
 export BLANK, HIT, CRIT, BLOCK
+export NONE, LIGHT, HEAVY
 export AttackDie, DefendDie, Weapon, AttackPool, DefenseDice
 export RA, BA, WA, RD, WD, AAD, ADD
-export dice, result, roll, EV
-export spray, blast, highVelocity, pierce, impact
+export dice, result, modCover
+
+import Base.+
+import Base.-
 
 abstract type DieFace end
 
@@ -12,6 +15,25 @@ abstract type BLANK <: DieFace end
 abstract type HIT <: DieFace end
 abstract type CRIT <: DieFace end
 abstract type BLOCK <: DieFace end
+
+abstract type COVER end
+abstract type NONE <: COVER end
+abstract type LIGHT <: COVER end
+abstract type HEAVY <: COVER end
+
+const COVERS = [NONE, LIGHT, HEAVY]
+
+function +(::Type{T}, y::Int) where {T<:COVER}
+    i = findfirst(f->f==T, COVERS)
+    i = y > 0 ? min(3, i + y) : max(1, i + y)
+    return COVERS[i]
+end
+
+function -(y::Int, ::Type{T}) where {T<:COVER}
+    i = findfirst(f->f==T, COVERS)
+    return max(0, y - (i-1))
+end
+
 
 struct AttackDie
     hit::Int                # Number of hit symbols
