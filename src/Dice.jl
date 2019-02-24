@@ -5,6 +5,7 @@ export NONE, LIGHT, HEAVY
 export AttackDie, DefendDie, Weapon, AttackPool, DefenseDice
 export RA, BA, WA, RD, WD, AAD, ADD
 export dice, result, modCover
+export spray, blast, highVelocity, pierce, impact, range
 
 import Base.+
 import Base.-
@@ -64,8 +65,9 @@ struct Weapon
     spray::Bool             # If true, multiply no. of dice by no. of minis in defending unit
     blast::Bool             # If true, ignore defender's cover
     highVelocity::Bool      # If true, defender cannot spend dodge tokens
-    pierce::Int             # Pierce <X> value
-    impact::Int             # Impact <X> value
+    pierce::Int             # Pierce <X> value (may cancel up to <X> BLOCK results on defender's dice)
+    impact::Int             # Impact <X> value (up to <X> HIT results are not cancelled by Armor keyword)
+    range::Vector{Int}      # [min , max] range values. If min = max = 0, then melee weapon
 end
 
 struct AttackPool
@@ -81,6 +83,7 @@ blast(pool::AttackPool) = any([w.blast for w in pool.weapons])
 highVelocity(pool::AttackPool) = any([w.highVelocity for w in pool.weapons])
 pierce(pool::AttackPool) = sum([w.pierce for w in pool.weapons])
 impact(pool::AttackPool) = sum([w.impact for w in pool.weapons])
+range(pool::AttackPool) = [ minimum([w.range[1] for w in pool.weapons]) , maximum([w.range[2] for w in pool.weapons]) ]
 
 struct DefenseDice
     dice::DefendDie         # Base defense die type
