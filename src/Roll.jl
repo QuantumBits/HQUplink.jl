@@ -63,7 +63,7 @@ function roll(ap::AttackPool, dd::DefenseDice, ::Type{cover}) where {cover<:COVE
             if haskey(rp, d)
                 # Decide whether to reroll
                 # IDEA: Resolve attack dice here
-                nblanks = rp[d][3] # + (dd.armor ? rp[d][1] : 0)
+                nblanks = rp[d][3] + (dd.armor ? max(0, rp[d][1] - impact(ap)) : 0)
                 if nblanks >= rerolls
                     rp[d] .-= rerolls * result(AttackDie, BLANK)
                     rp[d] .+= roll(d, ap.surge, rerolls)
